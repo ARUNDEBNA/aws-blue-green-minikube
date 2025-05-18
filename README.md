@@ -13,7 +13,6 @@ This project automates the deployment of:
 - Deploys blue and green versions of a Node.js app
 - Jenkins is deployed to Kubernetes for future CI/CD use
 - GitHub Actions triggers the whole pipeline on push
-
 ## Prerequisites
 
 - AWS account

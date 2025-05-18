@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-green
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-app
+      version: green
+  template:
+    metadata:
+      labels:
+        app: node-app
+        version: green
+    spec:
+      containers:
+      - name: node-app
+        image: <your_ecr_repo_green_image>
+        ports:
+        - containerPort: 3000

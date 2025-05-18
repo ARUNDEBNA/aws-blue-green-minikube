@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-blue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: node-app
+      version: blue
+  template:
+    metadata:
+      labels:
+        app: node-app
+        version: blue
+    spec:
+      containers:
+      - name: node-app
+        image: <your_ecr_repo_blue_image>
+        ports:
+        - containerPort: 3000

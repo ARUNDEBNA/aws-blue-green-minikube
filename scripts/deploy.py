@@ -49,9 +49,21 @@ def ensure_security_group():
         )
         return sg['GroupId']
 
+def ensure_key_pair():
+    ec2_client = boto3.client('ec2', region_name=AWS_REGION)
+    try:
+        ec2_client.describe_key_pairs(KeyNames=[KEY_NAME])
+        print(f"Key pair '{KEY_NAME}' already exists.")
+    except ec2_client.exceptions.ClientError:
+        print(f"Creating key pair '{KEY_NAME}'...")
+        key = ec2_client.create_key_pair(KeyName=KEY_NAME)
+        with open(f"{KEY_NAME}.pem", "w") as f:
+            f.write(key['KeyMaterial'])
+
 def launch_ec2():
     ec2 = boto3.resource('ec2', region_name=AWS_REGION)
     sec_group_id = ensure_security_group()
+    ensure_key_pair()
 
     instance = ec2.create_instances(
         ImageId=AMI_ID,

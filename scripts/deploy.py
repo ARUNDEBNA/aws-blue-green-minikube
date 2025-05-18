@@ -25,42 +25,46 @@ def build_and_push_images(ecr_client, account_id):
         subprocess.run(['docker', 'build', '-t', image_uri, './node-app'], check=True)
         subprocess.run(['docker', 'push', image_uri], check=True)
 
-def ensure_security_group(ec2_client):
-    groups = ec2_client.describe_security_groups(Filters=[{'Name': 'group-name', 'Values': [SEC_GROUP]}])['SecurityGroups']
-    if groups:
-        return groups[0]['GroupId']
-    
-    response = ec2_client.create_security_group(
-        GroupName=SEC_GROUP,
-        Description='Security group for Minikube on EC2'
-    )
-    group_id = response['GroupId']
-    # Allow SSH and all traffic for simplicity
-    ec2_client.authorize_security_group_ingress(
-        GroupId=group_id,
-        IpPermissions=[
-            {
-                'IpProtocol': '-1',
-                'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
-            }
-        ]
-    )
-    return group_id
+def ensure_security_group():
+    ec2_client = boto3.client('ec2', region_name=AWS_REGION)
+    try:
+        response = ec2_client.describe_security_groups(GroupNames=[SEC_GROUP])
+        return response['SecurityGroups'][0]['GroupId']
+    except ec2_client.exceptions.ClientError:
+        print(f"Creating security group {SEC_GROUP}...")
+        vpc_id = ec2_client.describe_vpcs()['Vpcs'][0]['VpcId']
+        sg = ec2_client.create_security_group(
+            GroupName=SEC_GROUP,
+            Description='Minikube security group',
+            VpcId=vpc_id
+        )
+        ec2_client.authorize_security_group_ingress(
+            GroupId=sg['GroupId'],
+            IpPermissions=[
+                {
+                    'IpProtocol': '-1',
+                    'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+                }
+            ]
+        )
+        return sg['GroupId']
 
 def launch_ec2():
     ec2 = boto3.resource('ec2', region_name=AWS_REGION)
+    sec_group_id = ensure_security_group()
+
     instance = ec2.create_instances(
         ImageId=AMI_ID,
         InstanceType=INSTANCE_TYPE,
         MinCount=1,
         MaxCount=1,
         KeyName=KEY_NAME,
-        SecurityGroups=[SEC_GROUP]
+        SecurityGroupIds=[sec_group_id]
     )[0]
-    print("Launching EC2...")
+
     instance.wait_until_running()
     instance.reload()
-    print(f"Instance IP: {instance.public_ip_address}")
+    print(f"EC2 instance launched with public IP: {instance.public_ip_address}")
     return instance.public_ip_address
 
 def ssh_connect(ip):

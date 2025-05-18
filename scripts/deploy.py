@@ -20,7 +20,7 @@ def create_ecr_repo(ecr_client, name):
 
 def build_and_push_images(ecr_client, account_id):
     for repo in REPOS:
-        image_uri = f'{account_id}.dkr.ecr.{AWS_REGION}.amazonaws.com/{repo}:latest'
+        image_uri = f'{522806196718}.dkr.ecr.{AWS_REGION}.amazonaws.com/{repo}:latest'
         print(f"Building image {image_uri}")
         subprocess.run(['docker', 'build', '-t', image_uri, './node-app'], check=True)
         subprocess.run(['docker', 'push', image_uri], check=True)
@@ -78,7 +78,7 @@ def deploy_k8s_apps(ssh):
         ssh.exec_command(f'kubectl apply -f {file}')
 
 def switch_traffic_to(version, ssh):
-    update = f"kubectl patch service node-app-service -p '{{"spec":{{"selector":{{"app":"node-app","version":"{version}"}}}}}}'"
+    update = f"kubectl patch service node-app-service -p '{{\"spec\":{{\"selector\":{{\"app\":\"node-app\",\"version\":\"{version}\"}}}}}}'"
     print(f"Switching traffic to {version}")
     ssh.exec_command(update)
 

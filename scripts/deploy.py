@@ -25,6 +25,28 @@ def build_and_push_images(ecr_client, account_id):
         subprocess.run(['docker', 'build', '-t', image_uri, './node-app'], check=True)
         subprocess.run(['docker', 'push', image_uri], check=True)
 
+def ensure_security_group(ec2_client):
+    groups = ec2_client.describe_security_groups(Filters=[{'Name': 'group-name', 'Values': [SEC_GROUP]}])['SecurityGroups']
+    if groups:
+        return groups[0]['GroupId']
+    
+    response = ec2_client.create_security_group(
+        GroupName=SEC_GROUP,
+        Description='Security group for Minikube on EC2'
+    )
+    group_id = response['GroupId']
+    # Allow SSH and all traffic for simplicity
+    ec2_client.authorize_security_group_ingress(
+        GroupId=group_id,
+        IpPermissions=[
+            {
+                'IpProtocol': '-1',
+                'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
+            }
+        ]
+    )
+    return group_id
+
 def launch_ec2():
     ec2 = boto3.resource('ec2', region_name=AWS_REGION)
     instance = ec2.create_instances(

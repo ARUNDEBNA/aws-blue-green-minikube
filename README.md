@@ -49,7 +49,3 @@ kubectl patch service node-app-service -p '{"spec":{"selector":{"app":"node-app"
 
 - Terminate EC2 instance from AWS Console
 - Remove ECR repositories if no longer needed
-
-## License
-
-MIT
